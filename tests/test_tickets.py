@@ -72,6 +72,35 @@ class TestValidateTitle(unittest.TestCase):
         with self.assertRaises(ValueError):
             tickets.validate_urgency(VALID_URGENCIES, None)
 
+    def test_validate_affected_users(self):
+        result = tickets.validate_affected_users('5')
+        self.assertEqual(result, 5)
+
+
+    def test_affected_users_boundary(self):
+            result = tickets.validate_affected_users(1)
+            self.assertEqual(result, 1)
+
+    def test_affected_users_zero_rejected(self):
+         with self.assertRaises(ValueError):
+            tickets.validate_affected_users('0')
+
+    def test_affected_users_negative_rejected(self):
+        with self.assertRaises(ValueError):
+            tickets.validate_affected_users('-3')
+
+    def test_affected_users_decimal_rejected(self):
+        with self.assertRaises(ValueError):
+            tickets.validate_affected_users(2.5)
+
+    def test_affected_users_text__rejected(self):
+        with self.assertRaises(ValueError):
+            tickets.validate_affected_users('five')
+
+    def test_affected_users_boolean__rejected(self):
+        with self.assertRaises(ValueError):
+            tickets.validate_affected_users(True)
+
 
 if __name__ == "__main__":
     unittest.main()
