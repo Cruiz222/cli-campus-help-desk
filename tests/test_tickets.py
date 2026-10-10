@@ -686,6 +686,15 @@ class TestListTickets(unittest.TestCase):
 
         self.assertEqual(ticket_list[1]["id"], "T002")
 
+    def test_modifying_listed_ticket_status_does_not_affect_storage(self):
+        ticket_list = []
+        tickets.create_ticket(ticket_list, "Server down", "Hardware", "high", 5)
+        
+        result = tickets.list_tickets(ticket_list)
+        result[0]["status"] = "closed"
+        
+        self.assertEqual(ticket_list[0]["status"], "open")
+
 
 
 if __name__ == "__main__":

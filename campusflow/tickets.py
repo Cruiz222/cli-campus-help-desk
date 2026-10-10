@@ -1,3 +1,4 @@
+from copy import deepcopy
 VALID_CATEGORIES = ["Network", "Hardware", "Software", "Other"]
 VALID_URGENCIES = ["low", "medium", "high"]
 def validate_title(title):
@@ -34,14 +35,21 @@ def validate_urgency(urgency_list, urgency):
 def validate_affected_users(affected_users):
     if isinstance(affected_users, bool):
         raise ValueError("Value of affected users must be an integer.")
-    if "." in str(affected_users):
+
+    if not isinstance(affected_users, (str, int)):
+        raise ValueError("Value of affected users must be an integer.")
+
+    if isinstance(affected_users, str) and "." in affected_users:
         raise ValueError("Affected users cannot be a decimal/float.")
+
     try:
         affected_users = int(affected_users)
     except ValueError:
         raise ValueError("Affected users must be an integer.")
+
     if affected_users <= 0:
         raise ValueError("Affected users must be at least 1.")
+
     return affected_users
 
 def calculate_priority(urgency, affected_users):
@@ -96,5 +104,6 @@ def list_tickets(tickets):
     Returns a new list containing all tickets in order.
     Returns a copy to protect the original storage list from external mutation.
     """
-    tickets_copy = tickets.copy()
+    tickets_copy = deepcopy(tickets)
     return tickets_copy
+
