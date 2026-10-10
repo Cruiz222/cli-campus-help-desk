@@ -8,5 +8,15 @@
         "priority": "critical",
         "status": "open",
         "assigned_to": null
+    },
+    {
+        "id": "T002",
+        "title": "Network outage",
+        "category": "Network",
+        "urgency": "high",
+        "affected_users": 40,
+        "priority": "critical",
+        "status": "open",
+        "assigned_to": null
     }
 ]
