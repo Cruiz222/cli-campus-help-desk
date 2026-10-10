@@ -210,7 +210,9 @@ class TestValidateAffectedUsers(unittest.TestCase):
 
             tickets.validate_affected_users(True)
 
-
+    def test_affected_none_rejected(self):
+        with self.assertRaises(ValueError):
+            tickets.validate_affected_users(None)
 
 class TestCalculatePriority(unittest.TestCase):
 
