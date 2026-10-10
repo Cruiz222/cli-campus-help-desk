@@ -1,2 +1,9 @@
+<<<<<<< HEAD
 venv
 __pycache__
+=======
+__pycache__/
+*.py[cod]
+.venv/
+tickets.json
+>>>>>>> origin/feat/2-status-workflow
