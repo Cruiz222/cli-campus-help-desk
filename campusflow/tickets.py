@@ -66,4 +66,13 @@ def generate_ticket_id(tickets):
     next_number = largest_number + 1
     return f"T{next_number:03d}"
 
-
+def create_ticket(tickets, title, category, urgency, affected_users):
+    title = validate_title(title)
+    category = validate_category(VALID_CATEGORIES, category)
+    urgency = validate_urgency(VALID_URGENCIES, urgency)
+    affected_users = validate_affected_users(affected_users)
+    priority = calculate_priority(urgency, affected_users)
+    ticket_id = generate_ticket_id(tickets)
+    new_ticket = {"id": ticket_id, "title": title, "category": category, "urgency": urgency, "affected_users": affected_users, "priority": priority, "status": "open", "assigned_to": None}
+    tickets.append(new_ticket)
+    return new_ticket

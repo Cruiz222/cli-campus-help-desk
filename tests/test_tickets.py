@@ -181,5 +181,99 @@ class TestValidateTitle(unittest.TestCase):
         initial_length = len(ticket_list)
         tickets.generate_ticket_id(ticket_list)
         self.assertEqual(len(ticket_list), initial_length)
+
+    #TESTS FOR create_ticket
+    def test_has_all_required_fields(self):
+        ticket_list = []
+        ticket = tickets.create_ticket(ticket_list, "Server down", "Hardware", "high", 5)
+        required_keys = {
+            "id",
+            "title",
+            "category",
+            "urgency",
+            "affected_users",
+            "priority",
+            "status",
+            "assigned_to",
+        }
+        self.assertEqual(set(ticket.keys()), required_keys)
+
+    def test_initial_defaults(self):
+        ticket_list = []
+        ticket = tickets.create_ticket(ticket_list, "Network slow", "Network", "low", 2)
+        self.assertEqual(ticket["status"], "open")
+        self.assertIsNone(ticket["assigned_to"])
+
+    def test_stored_and_returned(self):
+        ticket_list = []
+        ticket = tickets.create_ticket(ticket_list, "Printer issue", "Hardware", "medium", 1)
+        self.assertEqual(len(ticket_list), 1)
+        self.assertEqual(ticket_list[0], ticket)
+
+    def test_normalization(self):
+        ticket_list = []
+        ticket = tickets.create_ticket(ticket_list, "  Wi-Fi down ", "network", "HIGH", 4)
+        self.assertEqual(ticket["title"], "Wi-Fi down")
+        self.assertEqual(ticket["category"], "Network")
+        self.assertEqual(ticket["urgency"], "high")
+
+    def test_priority_is_calculated(self):
+        ticket_list = []
+        ticket = tickets.create_ticket(ticket_list, "Major outage", "Network", "high", 15)
+        self.assertEqual(ticket["priority"], "critical")
+
+    def test_string_affected_users_becomes_int(self):
+        ticket_list = []
+        ticket = tickets.create_ticket(ticket_list, "Bug fix", "Software", "low", "15")
+        self.assertIsInstance(ticket["affected_users"], int)
+        self.assertEqual(ticket["affected_users"], 15)
+
+    def test_sequential_ids(self):
+        ticket_list = []
+        t1 = tickets.create_ticket(ticket_list, "First ticket", "Hardware", "low", 1)
+        t2 = tickets.create_ticket(ticket_list, "Second ticket", "Software", "low", 1)
+        self.assertEqual(t1["id"], "T001")
+        self.assertEqual(t2["id"], "T002")
+
+    def test_invalid_input_blank_title_stores_nothing(self):
+        ticket_list = []
+        with self.assertRaises(ValueError):
+            tickets.create_ticket(ticket_list, "   ", "Hardware", "low", 1)
+        self.assertEqual(len(ticket_list), 0)
+
+    def test_invalid_input_invalid_category_stores_nothing(self):
+        ticket_list = []
+        with self.assertRaises(ValueError):
+            tickets.create_ticket(ticket_list, "Valid Title", "Printer", "low", 1)
+        self.assertEqual(len(ticket_list), 0)
+
+    def test_invalid_input_invalid_urgency_stores_nothing(self):
+        ticket_list = []
+        with self.assertRaises(ValueError):
+            tickets.create_ticket(ticket_list, "Valid Title", "Hardware", "urgent", 1)
+        self.assertEqual(len(ticket_list), 0)
+
+    def test_invalid_input_invalid_affected_users_stores_nothing(self):
+        ticket_list = []
+        with self.assertRaises(ValueError):
+            tickets.create_ticket(ticket_list, "Valid Title", "Hardware", "low", 0)
+        self.assertEqual(len(ticket_list), 0)
+
+    def test_ids_unique_when_starting_from_loaded_records(self):
+        ticket_list = [
+            {
+                "id": "T005",
+                "title": "Old Ticket",
+                "category": "Hardware",
+                "urgency": "low",
+                "affected_users": 1,
+                "priority": "low",
+                "status": "open",
+                "assigned_to": None,
+            }
+        ]
+        ticket = tickets.create_ticket(ticket_list, "New Ticket", "Software", "low", 1)
+        self.assertEqual(ticket["id"], "T006")
+
 if __name__ == "__main__":
     unittest.main()
