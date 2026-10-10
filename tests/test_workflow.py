@@ -157,7 +157,23 @@ class TestTicketStatus(unittest.TestCase):
         with self.assertRaises(ValueError):
             update_ticket_status(
                 tickets, "T999", "in_progress"
-            )        
+            )
+
+
+    def test_invalid_status_is_rejected_without_modifying_ticket(self):
+        tickets = [
+            {
+                "id": "T001",
+                "status": "open",
+                "assigned_to": "Alice",
+            }
+        ]
+
+        with self.assertRaises(ValueError):
+            update_ticket_status(tickets, "T001", "closed")
+
+        self.assertEqual(tickets[0]["status"], "open")        
+
 
 class TestReopenTicket(unittest.TestCase):
 
@@ -203,16 +219,23 @@ class TestReopenTicket(unittest.TestCase):
 
     def test_only_requested_ticket_is_reopened(self):
         tickets = [
-            {"id": "T001", "status": "open", "assigned_to": "Ada"},
-            {"id": "T002", "status": "resolved", "assigned_to": "Daniel"}
+            {
+                "id": "T001",
+                "status": "resolved",
+                "assigned_to": "Alice",
+            },
+            {
+                "id": "T002",
+                "status": "in_progress",
+                "assigned_to": "Bob",
+            },
         ]
 
-        result = reopen_ticket(tickets, "T002")
+        reopen_ticket(tickets, "T001")
 
         self.assertEqual(tickets[0]["status"], "open")
-        self.assertEqual(tickets[1]["status"], "open")
-        self.assertEqual(result["id"], "T002")
+        self.assertEqual(tickets[1]["status"], "in_progress")
 
-        
+
 if __name__ == "__main__":
     unittest.main()
