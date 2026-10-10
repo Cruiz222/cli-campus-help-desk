@@ -53,6 +53,17 @@ def calculate_priority(urgency, affected_users):
         return 'medium'
     else:
         return 'low'
-#print(validate_affected_users(2.5))
+
+def generate_ticket_id(tickets):
+    if not tickets:
+        return "T001" 
+    ticket_numbers = []
+    for ticket in tickets:
+        ticket_id_str = ticket["id"]
+        numeric_part = int(ticket_id_str[1:]) #Remove the leading 'T' and convert the rest to an integer.
+        ticket_numbers.append(numeric_part)
+    largest_number = max(ticket_numbers)
+    next_number = largest_number + 1
+    return f"T{next_number:03d}"
 
 

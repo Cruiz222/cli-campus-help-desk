@@ -7,7 +7,7 @@ from campusflow.tickets import (
 
 
 class TestValidateTitle(unittest.TestCase):
-
+    #TESTS FOR validate_title
     def test_validate_title(self):
         result = tickets.validate_title("   Wi-Fi is down   ")
         self.assertEqual(result, "Wi-Fi is down")
@@ -16,6 +16,7 @@ class TestValidateTitle(unittest.TestCase):
         with self.assertRaises(ValueError):
             tickets.validate_title("  ")
 
+    #TESTS FOR validate_category
     def test_validate_category(self):
         result = tickets.validate_category(VALID_CATEGORIES, "  NetWork   ")
         self.assertEqual(result, "Network")
@@ -45,7 +46,8 @@ class TestValidateTitle(unittest.TestCase):
     def test_non_text_category_rejected(self):
         with self.assertRaises(ValueError):
             tickets.validate_category(VALID_CATEGORIES, None)
-    
+
+    #TESTS FOR validate_urgency
     def test_validate_urgency(self):
         result = tickets.validate_urgency(VALID_URGENCIES, "low")
         self.assertEqual(result, "low")
@@ -77,6 +79,7 @@ class TestValidateTitle(unittest.TestCase):
         self.assertEqual(result, 5)
 
 
+    #TESTS FOR affected_users
     def test_affected_users_boundary(self):
             result = tickets.validate_affected_users(1)
             self.assertEqual(result, 1)
@@ -101,6 +104,7 @@ class TestValidateTitle(unittest.TestCase):
         with self.assertRaises(ValueError):
             tickets.validate_affected_users(True)
 
+    #TESTS FOR calculate_priority
     # --- Roadmap Required Scenarios ---
 
     def test_high_urgency_12_users_returns_critical(self):
@@ -141,6 +145,41 @@ class TestValidateTitle(unittest.TestCase):
     def test_medium_urgency_10_users_returns_high(self):
         self.assertEqual(tickets.calculate_priority("medium", 10), "high")
 
+    #TESTS FOR generate_ticket_id
+    def test_empty_list_returns_t001(self):
+        ticket_list = []
+        result = tickets.generate_ticket_id(ticket_list)
+        self.assertEqual(result, "T001")
 
+    def test_single_ticket_returns_t002(self):
+        ticket_list = [{"id": "T001"}]
+        result = tickets.generate_ticket_id(ticket_list)
+        self.assertEqual(result, "T002")
+
+    def test_sequential_tickets_returns_t003(self):
+        ticket_list = [{"id": "T001"}, {"id": "T002"}]
+        result = tickets.generate_ticket_id(ticket_list)
+        self.assertEqual(result, "T003")
+
+    def test_gap_in_numbering_uses_max_id(self):
+        ticket_list = [{"id": "T001"}, {"id": "T005"}]
+        result = tickets.generate_ticket_id(ticket_list)
+        self.assertEqual(result, "T006")
+
+    def test_numeric_ordering_over_text_ordering(self):
+        ticket_list = [{"id": "T009"}, {"id": "T010"}]
+        result = tickets.generate_ticket_id(ticket_list)
+        self.assertEqual(result, "T011")
+
+    def test_unordered_list_returns_correct_next_id(self):
+        ticket_list = [{"id": "T003"}, {"id": "T001"}, {"id": "T002"}]
+        result = tickets.generate_ticket_id(ticket_list)
+        self.assertEqual(result, "T004")
+
+    def test_generate_ticket_id_does_not_modify_list(self):
+        ticket_list = [{"id": "T001"}, {"id": "T002"}]
+        initial_length = len(ticket_list)
+        tickets.generate_ticket_id(ticket_list)
+        self.assertEqual(len(ticket_list), initial_length)
 if __name__ == "__main__":
     unittest.main()
