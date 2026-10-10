@@ -101,6 +101,46 @@ class TestValidateTitle(unittest.TestCase):
         with self.assertRaises(ValueError):
             tickets.validate_affected_users(True)
 
+    # --- Roadmap Required Scenarios ---
+
+    def test_high_urgency_12_users_returns_critical(self):
+        self.assertEqual(tickets.calculate_priority("high", 12), "critical")
+
+    def test_high_urgency_2_users_returns_high(self):
+        self.assertEqual(tickets.calculate_priority("high", 2), "high")
+
+    def test_low_urgency_4_users_returns_medium(self):
+        self.assertEqual(tickets.calculate_priority("low", 4), "medium")
+
+    def test_low_urgency_1_user_returns_low(self):
+        self.assertEqual(tickets.calculate_priority("low", 1), "low")
+
+    # --- Boundary & Edge-case Tests ---
+
+    def test_high_urgency_exactly_10_users_returns_critical(self):
+        self.assertEqual(tickets.calculate_priority("high", 10), "critical")
+
+    def test_high_urgency_9_users_returns_high(self):
+        self.assertEqual(tickets.calculate_priority("high", 9), "high")
+
+    def test_low_urgency_exactly_10_users_returns_high(self):
+        self.assertEqual(tickets.calculate_priority("low", 10), "high")
+
+    def test_low_urgency_9_users_returns_medium(self):
+        self.assertEqual(tickets.calculate_priority("low", 9), "medium")
+
+    def test_low_urgency_exactly_3_users_returns_medium(self):
+        self.assertEqual(tickets.calculate_priority("low", 3), "medium")
+
+    def test_low_urgency_2_users_returns_low(self):
+        self.assertEqual(tickets.calculate_priority("low", 2), "low")
+
+    def test_medium_urgency_1_user_returns_medium(self):
+        self.assertEqual(tickets.calculate_priority("medium", 1), "medium")
+
+    def test_medium_urgency_10_users_returns_high(self):
+        self.assertEqual(tickets.calculate_priority("medium", 10), "high")
+
 
 if __name__ == "__main__":
     unittest.main()
