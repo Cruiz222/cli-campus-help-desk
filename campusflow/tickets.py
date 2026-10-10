@@ -1,4 +1,5 @@
 VALID_CATEGORIES = ["Network", "Hardware", "Software", "Other"]
+VALID_URGENCIES = ["low", "medium", "high"]
 def validate_title(title):
     if not isinstance(title, str):
         raise ValueError("Title must be text.")
@@ -19,5 +20,15 @@ def validate_category(categories, category):
             return each_category
     raise ValueError("Invalid category. Choose from: Network, Hardware, Software, Other.")
 
+
+def validate_urgency(urgency_list, urgency):
+    if not isinstance(urgency, str):
+        raise ValueError("Urgency must be text.")
+    urgency = urgency.strip()
+    if urgency == "":
+        raise ValueError("Urgency cannot be blank.") 
+    if urgency.lower() not in urgency_list:
+        raise ValueError("Invalid urgency. Choose from: low, medium or high.")
+    return urgency.lower()
 
 
