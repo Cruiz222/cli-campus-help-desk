@@ -76,3 +76,25 @@ def create_ticket(tickets, title, category, urgency, affected_users):
     new_ticket = {"id": ticket_id, "title": title, "category": category, "urgency": urgency, "affected_users": affected_users, "priority": priority, "status": "open", "assigned_to": None}
     tickets.append(new_ticket)
     return new_ticket
+
+
+def get_ticket_by_id(tickets, ticket_id):
+    """
+    Finds and returns a specific ticket dictionary by its ID.
+    Normalizes the ID with stripping and uppercase conversion.
+    """
+    if not isinstance(ticket_id, str):
+        raise ValueError("Ticket ID must be text.")
+    ticket_id = ticket_id.strip().upper()
+    for ticket in tickets:
+        if ticket.get('id') == ticket_id:
+            return ticket
+    raise ValueError(f"Ticket {ticket_id} not found.")
+
+def list_tickets(tickets):
+    """
+    Returns a new list containing all tickets in order.
+    Returns a copy to protect the original storage list from external mutation.
+    """
+    tickets_copy = tickets.copy()
+    return tickets_copy

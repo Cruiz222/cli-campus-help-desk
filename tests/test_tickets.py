@@ -275,5 +275,68 @@ class TestValidateTitle(unittest.TestCase):
         ticket = tickets.create_ticket(ticket_list, "New Ticket", "Software", "low", 1)
         self.assertEqual(ticket["id"], "T006")
 
+    #TESTS FOR get_ticket_by_id
+    def test_finds_existing_ticket(self):
+        ticket_list = [{"id": "T001", "title": "Server down"}]
+        result = tickets.get_ticket_by_id(ticket_list, "T001")
+        self.assertEqual(result["id"], "T001")
+        self.assertEqual(result["title"], "Server down")
+
+    def test_returns_actual_dictionary_not_copy(self):
+        ticket_list = [{"id": "T001", "title": "Server down"}]
+        result = tickets.get_ticket_by_id(ticket_list, "T001")
+        result["title"] = "Updated Title"
+        self.assertEqual(ticket_list[0]["title"], "Updated Title")
+
+    def test_normalizes_whitespace_and_case(self):
+        ticket_list = [{"id": "T001", "title": "Server down"}]
+        result = tickets.get_ticket_by_id(ticket_list, "  t001  ")
+        self.assertEqual(result["id"], "T001")
+
+    def test_non_string_id_raises_value_error(self):
+        ticket_list = [{"id": "T001", "title": "Server down"}]
+        with self.assertRaises(ValueError):
+            tickets.get_ticket_by_id(ticket_list, 1)
+
+    def test_unknown_id_raises_value_error(self):
+        ticket_list = [{"id": "T001", "title": "Server down"}]
+        with self.assertRaises(ValueError):
+            tickets.get_ticket_by_id(ticket_list, "T999")
+
+    #TESTS FOR list_tickets
+    def test_returns_all_tickets_in_order(self):
+        ticket_list = [
+            {"id": "T001", "title": "First"},
+            {"id": "T002", "title": "Second"},
+            {"id": "T003", "title": "Third"},
+        ]
+        result = tickets.list_tickets(ticket_list)
+        self.assertEqual(len(result), 3)
+        self.assertEqual(result[0]["id"], "T001")
+        self.assertEqual(result[1]["id"], "T002")
+        self.assertEqual(result[2]["id"], "T003")
+
+    def test_empty_list_returns_empty_list(self):
+        ticket_list = []
+        result = tickets.list_tickets(ticket_list)
+        self.assertEqual(result, [])
+        self.assertIsNot(result, ticket_list)
+
+    def test_returns_new_list_original_unchanged(self):
+        ticket_list = [
+            {"id": "T001", "title": "First"},
+            {"id": "T002", "title": "Second"},
+        ]
+        result = tickets.list_tickets(ticket_list)
+        
+        # Mutate the returned list
+        result.append({"id": "T003", "title": "Third"})
+        result.reverse()
+
+        # Original list should remain unchanged in length and order
+        self.assertEqual(len(ticket_list), 2)
+        self.assertEqual(ticket_list[0]["id"], "T001")
+        self.assertEqual(ticket_list[1]["id"], "T002")
+
 if __name__ == "__main__":
     unittest.main()
