@@ -1,3 +1,4 @@
+import json
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -49,3 +50,31 @@ class TestTicketStorage(unittest.TestCase):
 
             with self.assertRaises(ValueError):
                 load_tickets(filename)
+
+
+
+    def test_load_rejects_non_list_json(self):
+        with TemporaryDirectory() as directory:
+            filename = Path(directory) / "tickets.json"
+
+            with open(filename, "w", encoding="utf-8") as file:
+                json.dump({"id": "T001"}, file)
+
+            with self.assertRaises(ValueError):
+                load_tickets(filename)
+                
+
+    def test_load_rejects_duplicate_ticket_ids(self):
+        with TemporaryDirectory() as directory:
+            filename = Path(directory) / "tickets.json"
+
+            with open(filename, "w", encoding="utf-8") as file:
+                json.dump([
+                    {"id": "T001", "status": "open"},
+                    {"id": "T001", "status": "resolved"}
+                ], file)
+
+            with self.assertRaises(ValueError):
+                load_tickets(filename)
+
+                     
