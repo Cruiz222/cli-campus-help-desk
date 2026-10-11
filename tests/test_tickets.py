@@ -1,4 +1,5 @@
 import unittest
+from datetime import datetime
 
 from campusflow import tickets 
 
@@ -402,9 +403,22 @@ class TestCreateTicket(unittest.TestCase):
 
             "assigned_to",
 
+            "created_at",
+
+            "started_at",
+
+            "resolved_at",
+
         }
 
         self.assertEqual(set(ticket.keys()), required_keys)
+
+    def test_new_ticket_has_timestamps(self):
+        ticket_list = []
+        ticket = tickets.create_ticket(ticket_list, "Wi-Fi down", "Network", "high", 15)
+        datetime.fromisoformat(ticket["created_at"])
+        self.assertIsNone(ticket["started_at"])
+        self.assertIsNone(ticket["resolved_at"])
 
 
 

@@ -40,10 +40,12 @@ def display_ticket(ticket):
     print(f"Priority:        {ticket['priority']}")
     print(f"Status:          {ticket['status']}")
     print(
-        f"Assigned mentor: {ticket.get('assigned_to') or 'Unassigned'}"
+        f"Assigned mentor: "
+        f"{ticket.get('assigned_to') or 'Unassigned'}"
     )
     print(f"Created at:      {ticket.get('created_at') or 'N/A'}")
-    print(f"Resolved at:     {ticket.get('resolved_at') or 'N/A'}")
+    print(f"Started at:      {ticket.get('started_at') or 'Not yet'}")
+    print(f"Resolved at:     {ticket.get('resolved_at') or 'Not yet'}")
     print("-" * 50)
 
 
@@ -79,6 +81,9 @@ def display_history(events):
             f"Mentor:     "
             f"{snapshot.get('assigned_to') or 'Unassigned'}"
         )
+        print(f"Created:    {snapshot.get('created_at') or 'N/A'}")
+        print(f"Started:    {snapshot.get('started_at') or 'Not yet'}")
+        print(f"Resolved:   {snapshot.get('resolved_at') or 'Not yet'}")
 
 
 # --------------------------------------------------
@@ -142,12 +147,15 @@ def fellow_create_ticket(fellow_id):
     print("\n========== CREATE TICKET ==========")
 
     title = input("Ticket title: ").strip()
+
     category = input(
         "Category (Network/Hardware/Software/Other): "
     ).strip()
+
     urgency = input(
         "Urgency (low/medium/high): "
     ).strip()
+
     affected_users = input(
         "Number of affected users: "
     ).strip()
@@ -166,6 +174,7 @@ def fellow_create_ticket(fellow_id):
     print(f"Priority: {ticket['priority']}")
     print(f"Assigned mentor: {mentor}")
     print(f"Current status: {ticket['status']}")
+    print(f"Created at: {ticket.get('created_at') or 'N/A'}")
 
 
 def fellow_view_tickets(fellow_id):
@@ -377,6 +386,7 @@ def mentor_view_report():
 def mentor_menu():
     try:
         mentor = choose_mentor()
+
     except ValueError as error:
         print(f"\nError: {error}")
         return
@@ -437,6 +447,7 @@ def main():
 
     try:
         load_current_tickets()
+
     except (ValueError, OSError) as error:
         print(f"\nUnable to load ticket history: {error}")
         return
@@ -466,5 +477,6 @@ def main():
 if __name__ == "__main__":
     try:
         main()
+
     except (KeyboardInterrupt, EOFError):
         print("\nCampusFlow closed.")
