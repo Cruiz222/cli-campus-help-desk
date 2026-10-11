@@ -3,6 +3,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from campusflow.tickets import create_ticket
 from campusflow.workflow.storage import save_tickets, load_tickets
 
 
@@ -77,4 +78,14 @@ class TestTicketStorage(unittest.TestCase):
             with self.assertRaises(ValueError):
                 load_tickets(filename)
 
-                     
+    def test_timestamps_survive_round_trip(self):
+        tickets = []
+        create_ticket(tickets, "Wi-Fi down", "Network", "high", 15)
+
+        with TemporaryDirectory() as folder:
+            filename = Path(folder) / "tickets.json"
+            save_tickets(tickets, filename)
+            loaded = load_tickets(filename)
+
+        self.assertEqual(loaded, tickets)
+        self.assertIsNone(loaded[0]["started_at"])

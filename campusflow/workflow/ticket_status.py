@@ -1,3 +1,6 @@
+from campusflow.tickets import current_timestamp
+
+
 def update_ticket_status(tickets, ticket_id, new_status):
 
     valid_statuses = ("open", "in_progress", "resolved")
@@ -26,11 +29,13 @@ def update_ticket_status(tickets, ticket_id, new_status):
                     )
 
                 ticket["status"] = "in_progress"
+                ticket["started_at"] = current_timestamp()
                 return ticket
 
             if current_status == "in_progress" and new_status == "resolved":
 
                 ticket["status"] = "resolved"
+                ticket["resolved_at"] = current_timestamp()
                 return ticket
 
             raise ValueError(
@@ -53,7 +58,8 @@ def reopen_ticket(tickets, ticket_id):
                 raise ValueError("only resolved tickets can be reopened")
 
             ticket["status"] = "open"
+            ticket["resolved_at"] = None
             return ticket
 
 
-    raise ValueError(f"Ticket {ticket_id} not found")   
+    raise ValueError(f"Ticket {ticket_id} not found")
