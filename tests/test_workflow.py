@@ -1,5 +1,7 @@
 import unittest
+from datetime import datetime
 
+from campusflow.tickets import create_ticket
 from campusflow.workflow.assign_ticket import assign_ticket
 from campusflow.workflow.ticket_status import (
     update_ticket_status, reopen_ticket)
@@ -235,6 +237,46 @@ class TestReopenTicket(unittest.TestCase):
 
         self.assertEqual(tickets[0]["status"], "open")
         self.assertEqual(tickets[1]["status"], "in_progress")
+
+
+class TestTimestamps(unittest.TestCase):
+
+    def setUp(self):
+        self.tickets = []
+        self.ticket = create_ticket(
+            self.tickets, "Wi-Fi down", "Network", "high", 15
+        )
+
+    def test_start_sets_started_at(self):
+        assign_ticket(self.tickets, "T001", "Mr Gabriel")
+        update_ticket_status(self.tickets, "T001", "in_progress")
+
+        datetime.fromisoformat(self.ticket["started_at"])
+        self.assertIsNone(self.ticket["resolved_at"])
+
+    def test_resolve_sets_resolved_at(self):
+        assign_ticket(self.tickets, "T001", "Mr Gabriel")
+        update_ticket_status(self.tickets, "T001", "in_progress")
+        update_ticket_status(self.tickets, "T001", "resolved")
+
+        datetime.fromisoformat(self.ticket["resolved_at"])
+
+    def test_rejected_start_sets_no_timestamp(self):
+        with self.assertRaises(ValueError):
+            update_ticket_status(self.tickets, "T001", "in_progress")
+
+        self.assertIsNone(self.ticket["started_at"])
+
+    def test_reopen_clears_resolved_at_keeps_started_at(self):
+        assign_ticket(self.tickets, "T001", "Mr Gabriel")
+        update_ticket_status(self.tickets, "T001", "in_progress")
+        update_ticket_status(self.tickets, "T001", "resolved")
+        started = self.ticket["started_at"]
+
+        reopen_ticket(self.tickets, "T001")
+
+        self.assertIsNone(self.ticket["resolved_at"])
+        self.assertEqual(self.ticket["started_at"], started)
 
 
 if __name__ == "__main__":

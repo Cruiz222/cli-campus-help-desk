@@ -1,4 +1,11 @@
 from copy import deepcopy
+from datetime import datetime
+
+
+def current_timestamp():
+    return datetime.now().isoformat(timespec="seconds")
+
+
 VALID_CATEGORIES = ["Network", "Hardware", "Software", "Other"]
 VALID_URGENCIES = ["low", "medium", "high"]
 def validate_title(title):
@@ -81,7 +88,7 @@ def create_ticket(tickets, title, category, urgency, affected_users):
     affected_users = validate_affected_users(affected_users)
     priority = calculate_priority(urgency, affected_users)
     ticket_id = generate_ticket_id(tickets)
-    new_ticket = {"id": ticket_id, "title": title, "category": category, "urgency": urgency, "affected_users": affected_users, "priority": priority, "status": "open", "assigned_to": None}
+    new_ticket = {"id": ticket_id, "title": title, "category": category, "urgency": urgency, "affected_users": affected_users, "priority": priority, "status": "open", "assigned_to": None, "created_at": current_timestamp(), "started_at": None, "resolved_at": None}
     tickets.append(new_ticket)
     return new_ticket
 
@@ -106,4 +113,3 @@ def list_tickets(tickets):
     """
     tickets_copy = deepcopy(tickets)
     return tickets_copy
-

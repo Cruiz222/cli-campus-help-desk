@@ -30,6 +30,9 @@ def display_tickets(tickets):
         print(f"Category: {ticket['category']}")
         print(f"Priority: {ticket['priority']}")
         print(f"Status: {ticket['status']}")
+        print(f"Created: {ticket.get('created_at') or 'N/A'}")
+        print(f"Started: {ticket.get('started_at') or 'Not yet'}")
+        print(f"Resolved: {ticket.get('resolved_at') or 'Not yet'}")
         print(
             f"Assigned mentor: "
             f"{ticket.get('assigned_to') or 'Unassigned'}"
