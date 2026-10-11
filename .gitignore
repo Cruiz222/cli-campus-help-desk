@@ -6,4 +6,5 @@ __pycache__/
 *.py[cod]
 .venv/
 tickets.json
+ticket_events.jsonl
 >>>>>>> origin/feat/2-status-workflow
