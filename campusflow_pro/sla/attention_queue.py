@@ -10,11 +10,13 @@ AT_RISK_FRACTION = 0.25
 UNRESOLVED = {"open", "in_progress"}
 
 
-def _to_utc(value):
+def _to_utc(value, assume_local=False):
     if isinstance(value, str):
         value = datetime.fromisoformat(value)
     if value.tzinfo is None or value.utcoffset() is None:
-        raise ValueError("Timestamps must be timezone-aware.")
+        if not assume_local:
+            raise ValueError("Timestamps must be timezone-aware.")
+        value = value.astimezone()  # naive value is treated as local time
     return value.astimezone(timezone.utc)
 
 
@@ -24,7 +26,8 @@ def sla_status(ticket, now):
         raise ValueError(f"Unknown priority: {priority}")
 
     limit = timedelta(hours=SLA_HOURS[priority])
-    deadline = _to_utc(get_field(ticket, "created_at")) + limit
+    created = _to_utc(get_field(ticket, "created_at"), assume_local=True)
+    deadline = created + limit
     remaining = deadline - _to_utc(now)
 
     if remaining <= timedelta(0):

@@ -42,12 +42,22 @@ class TestAttentionQueue(unittest.TestCase):
         with self.assertRaises(ValueError):
             sla_status(ticket(1, "urgent", 1), NOW)
 
-    def test_naive_timestamp_rejected(self):
-        t = {"id": 1, "priority": "low", "status": "open",
-             "created_at": datetime(2026, 10, 14)}
-        with self.assertRaises(ValueError):
-            sla_status(t, NOW)
+    # def test_naive_timestamp_rejected(self):
+    #     t = {"id": 1, "priority": "low", "status": "open",
+    #          "created_at": datetime(2026, 10, 14)}
+    #     with self.assertRaises(ValueError):
+    #         sla_status(t, NOW)
 
+    def test_naive_created_at_is_treated_as_local_time(self):
+        created = datetime.now() - timedelta(hours=5)
+        t = {"id": "T001", "priority": "critical", "status": "open",
+             "created_at": created.isoformat(timespec="seconds")}
+        info = sla_status(t, datetime.now(timezone.utc))
+        self.assertEqual(info["state"], "breached")
+
+    def test_naive_now_rejected(self):
+        with self.assertRaises(ValueError):
+            sla_status(ticket(1, "low", 1), datetime(2026, 10, 14))
 
 if __name__ == "__main__":
     unittest.main()
