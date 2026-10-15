@@ -6,7 +6,7 @@
 - **AI suggestion:** The first version of `attention_queue.py` required timezone-aware timestamps and rejected naive ones.
 - **Verification:** I read `campusflow/tickets.py` and found that `current_timestamp()` uses `datetime.now()`, so every ticket created by the original app has a naive `created_at`. The AI's version would have rejected all of them.
 - **Evidence:** After the change, the old test `test_naive_timestamp_rejected` failed, as expected, because the behaviour had changed on purpose. My manual edit also joined two lines and caused a `SyntaxError`, which the test run caught. I replaced the whole file instead of patching it.
-- **Decision:** A naive `created_at` is treated as local time, while a naive `now` is still rejected. I replaced the old test with two tests, one for each rule.
+- **Decision:** A naive `created_at` is treated as local time, while a naive `now` is still rejected. I replaced the old test with two tests, one for each rule. After the schema-v2 merge, this rule applies only to legacy tickets that have no `due_at`; schema-v2 tickets use their authoritative `due_at` deadline, and the other Pro modules reject naive timestamps.
 
 ## Cycle 2: Integrating audit logging without changing original code (suggestion accepted after checking)
 
