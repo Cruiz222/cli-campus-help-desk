@@ -37,7 +37,7 @@ class TestMainPro(unittest.TestCase):
         )
 
     def test_exit(self):
-        self.run_commands(["12"])
+        self.run_commands(["13"])
 
         self.assertIn("\nGoodbye!", self.output)
 
@@ -49,7 +49,7 @@ class TestMainPro(unittest.TestCase):
             "Network",
             "high",
             "20",
-            "12",
+            "13",
         ])
 
         self.assertEqual(len(self.app.tickets()), 1)
@@ -64,7 +64,7 @@ class TestMainPro(unittest.TestCase):
             "low",
             "1",
             "2",
-            "12",
+            "13",
         ])
 
         self.assertTrue(
@@ -85,7 +85,7 @@ class TestMainPro(unittest.TestCase):
             "admin",
             ticket["id"],
             "Alice",
-            "12",
+            "13",
         ])
 
         self.assertEqual(
@@ -111,7 +111,7 @@ class TestMainPro(unittest.TestCase):
         self.run_commands([
             "4", "Alice", ticket["id"],
             "5", "Alice", ticket["id"],
-            "12",
+            "13",
         ])
 
         self.assertEqual(
@@ -120,7 +120,7 @@ class TestMainPro(unittest.TestCase):
         )
 
     def test_invalid_option(self):
-        self.run_commands(["invalid", "12"])
+        self.run_commands(["invalid", "13"])
 
         self.assertIn("\nInvalid option.", self.output)
 
@@ -130,7 +130,7 @@ class TestMainPro(unittest.TestCase):
             "admin",
             "T999",
             "Alice",
-            "12",
+            "13",
         ])
 
         self.assertTrue(
@@ -149,7 +149,7 @@ class TestMainPro(unittest.TestCase):
         self.run_commands([
             "7",
             ticket["id"],
-            "12",
+            "13",
         ])
 
         self.assertTrue(
@@ -157,7 +157,7 @@ class TestMainPro(unittest.TestCase):
         )
 
     def test_report_display(self):
-        self.run_commands(["10", "12"])
+        self.run_commands(["10", "13"])
 
         self.assertTrue(
             any("CAMPUSFLOW PRO REPORT" in line for line in self.output)

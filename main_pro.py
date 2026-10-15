@@ -2,9 +2,12 @@
 """Interactive CLI for CampusFlow Pro."""
 
 from pathlib import Path
-
 from campusflow_pro.application import ProApplication
 from campusflow_pro.knowledge_quiz import run_quiz
+from campusflow_pro.knowledge_lab import (
+    run_knowledge_lab,
+    review_sessions,
+)
 
 
 DATA_FILE = Path("campusflow_pro.json")
@@ -113,8 +116,9 @@ def run_cli(
             output_fn("8. View SLA attention queue")
             output_fn("9. Escalate overdue tickets")
             output_fn("10. View report")
-            output_fn("11. Engineer Knowledge Quiz")
-            output_fn("12. Exit")
+            output_fn("11. Take engineer Knowledge Lab quiz")
+            output_fn("12. Mentor Review Sessions")
+            output_fn("13. Exit")
 
             choice = input_fn(
                 "Choose an option: "
@@ -282,12 +286,17 @@ def run_cli(
                 )
 
             elif choice == "11":
-                run_quiz(
+                run_knowledge_lab(
                     input_fn=input_fn,
                     output_fn=output_fn,
                 )
 
             elif choice == "12":
+                review_sessions(
+                    output_fn=output_fn,
+                )
+
+            elif choice == "13":
                 output_fn("\nGoodbye!")
                 return
 
