@@ -94,12 +94,24 @@ class TestProApplication(unittest.TestCase):
     def test_cannot_start_unassigned_ticket(self):
         ticket = self.create_ticket()
 
+        events_before = len(self.app.events())
+
         with self.assertRaises(ValueError):
             self.app.change_status(
                 "admin", ticket["id"], "in_progress"
             )
 
-        self.assertEqual(len(self.app.events()), 1)
+        # The rejected transition must not change ticket status.
+        unchanged_ticket = next(
+            item
+            for item in self.app.tickets()
+            if item["id"] == ticket["id"]
+        )
+
+        self.assertEqual(unchanged_ticket["status"], "open")
+
+        # Rejected operations must not create audit events.
+        self.assertEqual(len(self.app.events()), events_before)
 
     def test_start_and_resolve_lifecycle(self):
         ticket = self.create_ticket()
