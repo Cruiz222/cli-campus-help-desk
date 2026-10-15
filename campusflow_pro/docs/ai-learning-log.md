@@ -1,4 +1,3 @@
-cat > campusflow_pro/docs/ai-learning-log.md << 'EOF'
 # Engineer B AI-Learning Log
 
 ## Cycle 1: Naive timestamps in the SLA queue (suggestion modified)
@@ -32,4 +31,3 @@ cat > campusflow_pro/docs/ai-learning-log.md << 'EOF'
 - **Verification:** I searched the code with `grep` for the field names.
 - **Evidence:** `sla_cycle` appears nowhere in the code. `campusflow_pro/sla/escalation.py` compares the event details to exactly `{"escalation_cycle": cycle}`.
 - **Decision:** I corrected the contract to use `escalation_cycle` as the only key in `details`.
-EOF

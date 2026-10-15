@@ -13,9 +13,6 @@ We need to coordinate event recording and ticket-state persistence so that succe
 
 Please confirm this contract before we integrate the modules.
 
-
-
-
 ## Engineer B response
 
 Confirmed, with these points:
