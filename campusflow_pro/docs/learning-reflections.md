@@ -67,3 +67,40 @@ I learned more about testing, application structure, persistence, integration, G
 I still have a lot to learn, but I now understand better why developers need to think about reliability and maintainability, not just whether their code runs successfully.
 
 ---
+
+## Engineer B — My Learning Reflection
+
+### What I learned from this project
+
+I built the audit history, duplicate detection, the SLA attention queue, reports and the service layer that connects them to the original ticket functions. The main lesson was that a feature isn't finished when it works alone. My modules passed their own tests, but they only became useful once they matched the ticket format, timestamps and event rules that the rest of the project used.
+
+### The most challenging part
+
+The hardest part was timestamps. My first attention queue rejected timestamps without a timezone, but the original app creates tickets with `datetime.now()`, so every real ticket would have been rejected. I changed the queue to treat a naive `created_at` as local time. After the schema-v2 work, that rule applies only to legacy tickets without a `due_at`, and schema-v2 tickets use their stored deadline.
+
+### Working with Engineer A
+
+Engineer A proposed the escalation fields in the integration contract. When I replied, I first wrote that the ESCALATE event stored `sla_cycle` in its details. Searching the code showed the real key is `escalation_cycle`, so I corrected the contract before sending it. This taught me that an agreement between two people has to be checked against the code, not written from memory.
+
+### Knowledge Lab result and what I got wrong
+
+I scored 6/10. I answered Q1, Q3, Q4, Q5, Q6 and Q7 correctly and got four wrong:
+
+- **Q2 (priority):** I answered Medium. Low urgency with 10 affected users is High, because the rule gives high priority when affected users reach 10, whatever the urgency.
+- **Q8 (AI suggests `eval()` for JSON):** I chose "copy it". The correct answer is to reject it, because `eval()` runs arbitrary Python. Parsing should use `json.loads()` followed by validation.
+- **Q9 (duplicate warning):** I answered "ignore normalization". The correct answer is to warn and ask for confirmation, because titles that match after trimming whitespace and ignoring case may be duplicates.
+- **Q10 (rejected operation):** I answered "reset to zero". The event count must stay unchanged, because only successful operations create events.
+
+The Q9 and Q10 answers are the most useful to reflect on, because I implemented those exact behaviours and my own tests check them (`test_duplicate_declined` and `test_failed_operations_record_nothing`). Q8 matters too, because my learning log is about checking AI suggestions against evidence, and here I picked the unsafe suggestion. The lesson is that knowing what the code does is not the same as being able to state the rule when asked a question.
+
+### How I used AI
+
+I used AI to draft modules, tests and documents, and I found real errors in its output by checking it against the repository: the timestamp assumption, the `sla_cycle` key, and a generic task list that did not match what had already been merged. The four cycles in my learning log show these cases.
+
+### What I would improve next time
+
+I would read the existing ticket code and the agreed contract before writing a module, instead of after. I would also revise for the quiz topics that I answered wrongly, especially priority rules and safe JSON handling.
+
+### Final thoughts
+
+This project taught me more about integration, testing and review than about any single module. The mistakes in the quiz were useful, because they showed which rules I still need to learn properly.
