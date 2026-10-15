@@ -1,290 +1,240 @@
-# CampusFlow — Architecture and Design Decisions
+# CampusFlow Pro — Architecture and Design Decisions
 
-## Project: CampusFlow Pro
+**Project:** CampusFlow Pro
+**Team:** Engineer A and Engineer B
+**Date:** October 15, 2026
+**Status:** Implementation merged; final documentation and requirements review ongoing
+**GitHub Issue:** #8
 
-**Status:** Approved for implementation  
-**Date:** October 14, 2026  
-**Team:** Engineer A and Engineer B  
-**Baseline:** CampusFlow v1 — 106 passing tests
+## Introduction
 
----
+CampusFlow Pro is an improvement on our original CampusFlow helpdesk application. The first version already allowed users to create tickets, assign them, update their status, and generate reports.
 
-## ADR-001: Separate CampusFlow Pro from the Existing Application
+For this project, we needed to add more features, including SLA deadlines, overdue escalation, audit history, duplicate-ticket detection, safer JSON storage, an attention queue, and an Engineer Knowledge Quiz.
 
-### Context
+As a junior developer, I found that one of the biggest challenges was not just writing the new features but making sure they worked together without affecting the existing application.
 
-CampusFlow currently supports ticket creation, priority calculation, mentor assignment, ticket status transitions, work queues, reporting, and JSON persistence.
-
-The CampusFlow Pro challenge introduces several new requirements, including SLA deadlines, overdue escalation, audit history, duplicate detection, enhanced analytics, versioned persistence, and an Engineering Knowledge Lab.
-
-Introducing all these features directly into the existing modules could increase coupling and make regressions more difficult to isolate.
-
-### Decision
-
-Create a new Python package named `campusflow_pro/` to contain the additional functionality.
-
-The original `campusflow/` package will remain the authoritative implementation of existing ticket and workflow rules.
-
-The Pro package will extend and integrate with those rules rather than duplicate them.
-
-### Proposed Structure
-
-```text
-cli-campus-help-desk/
-├── campusflow/
-│   ├── __init__.py
-│   ├── tickets.py
-│   └── workflow/
-│       ├── assign_ticket.py
-│       ├── mentor_assignment.py
-│       ├── ticket_status.py
-│       ├── work_queue.py
-│       ├── reports.py
-│       └── storage.py
-│
-├── campusflow_pro/
-│   ├── __init__.py
-│   ├── sla/
-│   │   ├── __init__.py
-│   │   ├── clock.py
-│   │   ├── policy.py
-│   │   ├── overdue.py
-│   │   └── escalation.py
-│   ├── persistence/
-│   │   ├── __init__.py
-│   │   ├── schema.py
-│   │   └── json_store.py
-│   ├── audit/
-│   │   ├── __init__.py
-│   │   └── history.py
-│   ├── duplicates.py
-│   ├── attention_queue.py
-│   ├── analytics.py
-│   ├── knowledge_lab.py
-│   └── commands.py
-│
-├── tests/
-├── tests_pro/
-├── main.py
-├── main_pro.py
-└── docs/
-    └── design-decisions.md
-```
-
-### Rationale
-
-1. Protect existing functionality from unnecessary modifications.
-2. Allow engineers to work on separate modules.
-3. Improve test isolation.
-4. Make the integration boundary explicit.
-5. Preserve the existing 106-test regression baseline.
-6. Keep the new features organized by responsibility.
-
-### Consequences
-
-**Positive:**
-- New features are easier to locate and maintain.
-- Existing tests remain useful as regression protection.
-- Parallel development becomes more manageable.
-
-**Trade-offs:**
-- Some original modules may require integration changes.
-- The command layer must coordinate both packages.
-- Duplicate implementations of priority, assignment, or status rules must be avoided.
+This document explains the main design decisions we made, why we chose them, and some of the things we would improve in the future.
 
 ---
 
-## ADR-002: Preserve Existing Business Rules
+## ADR-001: Keeping CampusFlow Pro Separate from the Original Application
 
-### Decision
+### The problem
 
-The existing CampusFlow business rules remain authoritative.
+The original CampusFlow application was already working and had 106 passing tests before we started the Pro extension.
 
-These include:
+Adding all the new features directly into the existing modules could make the code harder to maintain and increase the chances of breaking something.
 
-- Priority calculation based on urgency and affected users.
-- Ticket ID generation.
-- Assignment requirements.
-- Legal status transitions.
-- Mentor assignment restrictions.
-- Original Open Work Queue ordering.
+### Our decision
 
-CampusFlow Pro must reuse existing functions where possible.
+We created a separate package called `campusflow_pro` for the new features.
 
-For example:
+The original `campusflow` package remains available, while the Pro package contains the additional functionality.
 
-```python
-from campusflow.tickets import calculate_priority
-```
+The main entry point for the integrated version is `main_pro.py`.
 
-### Rationale
+### Why we chose this
 
-Reimplementing existing rules would create multiple sources of business logic and increase the risk of inconsistent behavior.
+This made it easier for both engineers to work on different parts of the project.
 
-### Consequences
+It also helped us organize the code. For example, the SLA logic is kept separate from the persistence logic, and the CLI does not need to handle every business rule directly.
 
-Any necessary changes to original modules must preserve existing behavior and be supported by regression tests.
+### What I learned
+
+I learned that organizing code properly becomes more important as a project grows. Even when two features are related, they do not always need to be written in the same file.
 
 ---
 
-## ADR-003: Use Timezone-Aware UTC Timestamps
+## ADR-002: Preserving the Original Business Rules
 
-### Context
+### The problem
 
-The original application uses timezone-naive timestamps generated through `datetime.now()`.
+CampusFlow Pro was meant to extend the original system, not replace it.
 
-CampusFlow Pro requires reliable SLA calculations.
+The original application already had rules for ticket priorities, assignments, and status transitions.
 
-### Decision
+If we created different versions of those rules without considering the existing behavior, the two applications could produce inconsistent results.
 
-All new CampusFlow Pro timestamps must be timezone-aware UTC values.
+### Our decision
 
-Use Python's standard-library `datetime` module.
+We kept the original functionality available and used regression tests to check that the new work did not break it.
 
-The SLA engine must support injected timestamps so tests can run deterministically.
+We also made sure that ticket operations in the Pro application followed the required status transitions.
 
-### Rules
+For example, a ticket must be assigned before it can be started, and only a resolved ticket can be reopened.
 
-- Store timestamps using ISO-8601 format.
-- Include explicit UTC timezone information.
-- Reject invalid or unsupported datetime inputs.
-- Do not silently interpret historical naive timestamps as UTC.
-- Preserve original creation timestamps when reopening tickets.
+### Why we chose this
 
-### Rationale
+It would not make sense to introduce new features if the existing ones stopped working.
 
-Timezone-aware timestamps prevent ambiguity and make SLA calculations reliable.
+Keeping the old tests passing gave us more confidence during development.
+
+### Trade-off
+
+Supporting older behavior sometimes required extra compatibility logic, especially when working with ticket timestamps and SLA calculations.
 
 ---
 
-## ADR-004: Centralize SLA Business Rules
+## ADR-003: Using UTC Timestamps
 
-### Decision
+### The problem
 
-All SLA calculations will be implemented within `campusflow_pro/sla/`.
+The SLA system depends on time, so we needed a reliable way to calculate deadlines.
 
-Required SLA durations:
+Using local timestamps could cause confusion if the application was run on computers with different timezone settings.
 
-| Priority | Duration |
+### Our decision
+
+We used timezone-aware UTC timestamps for new CampusFlow Pro operations.
+
+We also designed the SLA functions to support fixed clocks during testing.
+
+### Why we chose this
+
+UTC gives us a consistent reference for comparing timestamps.
+
+Fixed clocks are useful because we can test a ticket's deadline without waiting for real time to pass.
+
+For example, we can create a ticket at 10:00 AM UTC and check its behavior at exactly 11:00 AM UTC.
+
+### What I learned
+
+I learned that time-related bugs can be difficult to notice if tests depend on the actual system clock.
+
+Using controlled timestamps made the SLA tests more predictable.
+
+---
+
+## ADR-004: Keeping SLA Rules in One Place
+
+### The problem
+
+Different ticket priorities have different response deadlines.
+
+If every part of the application calculates deadlines independently, it becomes easy for the results to disagree.
+
+### Our decision
+
+We used a central SLA policy with these durations:
+
+| Priority | SLA duration |
 |---|---|
-| Critical | 60 minutes |
-| High | 240 minutes |
-| Medium | 1,440 minutes |
-| Low | 2,880 minutes |
+| Critical | 1 hour |
+| High | 4 hours |
+| Medium | 24 hours |
+| Low | 48 hours |
 
-A ticket is overdue only when:
+New tickets store their deadline in the `due_at` field.
 
-- Its status is not `resolved`.
-- The current time is strictly later than `due_at`.
+A ticket is overdue only when the current time is strictly later than its deadline and the ticket is not resolved.
 
-At the exact deadline, a ticket is not overdue.
+### Why we chose this
 
-### Reopening Rule
+Having one policy makes it easier to understand and test how deadlines are calculated.
 
-When a resolved ticket is reopened:
+It also prevents different parts of the application from using different SLA durations for the same new ticket.
 
-1. Preserve `created_at`.
-2. Increment `escalation_cycle`.
-3. Calculate a new deadline.
-4. Update `updated_at`.
-5. Reset the escalation marker.
+### What I learned
 
-### Rationale
+The exact deadline is an important boundary.
 
-Centralizing these rules prevents different modules from calculating deadlines inconsistently.
+For example, a critical ticket created at 10:00 AM UTC is not overdue at exactly 11:00 AM UTC. It becomes overdue only after that time.
+
+That is why we used `now > due_at` instead of `now >= due_at`.
 
 ---
 
-## ADR-005: Escalation Must Be Idempotent
+## ADR-005: Preventing Duplicate Escalations
 
-### Context
+### The problem
 
-Repeated manual escalation checks must not create duplicate escalation records for the same SLA cycle.
+An overdue ticket might be checked more than once.
 
-### Decision
+Without proper tracking, the application could create a new escalation event every time the same ticket was checked.
 
-A ticket may be escalated at most once per SLA cycle.
+That would make the audit history misleading.
 
-Escalation must not automatically change:
+### Our decision
 
-- Ticket priority.
-- Ticket assignment.
-- Ticket status.
+We introduced two fields:
 
-Reopening starts a new cycle, making the ticket eligible for escalation again if the new deadline is exceeded.
+- `escalation_cycle` tracks the ticket's current SLA cycle.
+- `escalated_cycle` records the cycle in which the ticket was last escalated.
 
-### Implementation Consideration
+A new ticket starts at cycle `0`.
 
-The system must track whether the current SLA cycle has already been escalated.
+When a resolved ticket is reopened, its SLA cycle increases and a fresh deadline is calculated.
 
-Possible strategies include:
+### Why we chose this
 
-- A per-cycle marker on the ticket.
-- Deriving escalation state from recorded audit events.
+It allows the application to recognize when a ticket has already been escalated during its current cycle.
 
-The final strategy must be agreed upon before implementation.
+For example, checking the same overdue ticket three times should create only one escalation event.
 
-### Rationale
+If the ticket is later resolved and reopened, it can be escalated again during the new cycle.
 
-Idempotency ensures repeated operations do not produce duplicate business effects.
+### What I learned
+
+This helped me understand **idempotency**.
+
+An operation is idempotent when repeating it does not keep producing additional changes after the intended result has already been achieved.
+
+We also tested this behavior across application restarts, not just during one running session.
 
 ---
 
-## ADR-006: Use Versioned JSON Persistence
+## ADR-006: Using Versioned JSON Storage
 
-### Context
+### The problem
 
-The original application stores tickets as a JSON list.
+The original application used JSON for persistence.
 
-CampusFlow Pro requires tickets and audit events to be persisted together.
+For CampusFlow Pro, we needed to store additional information, including SLA deadlines, escalation cycles, and audit events.
 
-### Decision
+We also needed to handle invalid or corrupted data safely.
 
-The canonical CampusFlow Pro persistence format will be:
+### Our decision
 
-```json
-{
-  "schema_version": 2,
-  "tickets": [],
-  "events": []
-}
-```
+We introduced schema-v2 JSON persistence.
 
-### Persistence Requirements
+The application validates the stored document and uses atomic file replacement when saving changes.
 
-- Validate the entire document before accepting loaded data.
-- Reject unsupported schema versions.
-- Reject duplicate ticket IDs.
-- Validate event-to-ticket relationships.
-- Reject malformed timestamps and invalid required fields.
-- Save through a temporary file in the same directory.
-- Replace the destination using `os.replace()`.
-- Preserve existing valid data when loading fails.
-- Avoid fabricating missing historical data.
+### Why we chose this
 
-### Compatibility
+JSON was suitable for the project requirements because we were expected to work with Python's standard library.
 
-The original list-style JSON storage functions may remain available for legacy functionality.
+However, writing directly to the main file could leave it partially written if something failed during the operation.
 
-Legacy migration must be explicit rather than automatic.
+Using a temporary file and replacing the original after a successful write reduces that risk.
 
-### Rationale
+### What I learned
 
-Versioned persistence makes the data contract explicit and supports safer future changes.
+I initially thought of persistence mainly as saving and loading information.
+
+This part of the project helped me understand that persistence also involves protecting data from invalid updates and failed operations.
 
 ### Limitation
 
-Atomic replacement prevents partial destination-file replacement but does not independently solve concurrent-write conflicts.
+Atomic file replacement does not fully solve concurrent access.
+
+If two separate application processes read and update the same file, one process could overwrite changes made by the other.
+
+A future version could use file locking or a database with transaction support.
 
 ---
 
-## ADR-007: Maintain Append-Only Logical Audit History
+## ADR-007: Recording Audit History
 
-### Decision
+### The problem
 
-CampusFlow Pro must record successful operations using audit events.
+A helpdesk system should be able to explain what happened to a ticket.
 
-Required event types:
+For example, we should be able to tell when a ticket was created, who assigned it, and when its status changed.
+
+### Our decision
+
+We added audit events for successful ticket operations:
 
 - CREATE
 - ASSIGN
@@ -293,270 +243,320 @@ Required event types:
 - REOPEN
 - ESCALATE
 
-Each event contains:
+Each event includes information such as its unique ID, ticket ID, event type, actor, timestamp, status changes, and additional details.
 
-```text
-event_id
-ticket_id
-event_type
-actor
-timestamp
-before_status
-after_status
-details
-```
+The event history is append-only through the application's normal operations.
 
-Events must remain unchanged after creation during normal application operations.
+### Why we chose this
 
-### Transaction Consistency
+Audit events make it easier to understand a ticket's history and investigate unexpected behavior.
 
-A successful ticket operation must produce a consistent ticket state and corresponding audit event.
+We also decided that failed operations should not produce successful-operation audit events.
 
-Rejected operations must not modify either.
+For example, if someone tries to start an unassigned ticket, the application should reject the operation without changing the ticket or adding a START event.
 
-The application command layer will coordinate validation, state changes, event creation, and persistence.
+### What I learned
 
-### Rationale
+An audit log should describe what actually happened, not just what someone attempted to do.
 
-Audit events provide traceability and support ticket-history inspection.
-
-### Limitation
-
-Append-only logical history does not make a JSON file tamper-proof against external editing.
+This made me pay more attention to the order in which validation, state changes, and persistence happen.
 
 ---
 
-## ADR-008: Separate Domain Logic from CLI Interaction
+## ADR-008: Separating the CLI from Application Logic
 
-### Decision
+### The problem
 
-Business rules must not depend on interactive input or output.
+If all the business rules were written directly inside the CLI menu, the code would become difficult to test and maintain.
 
-The CLI is responsible for:
+Every test might require simulating user input, even when we only wanted to check a ticket rule.
 
-- Collecting user input.
-- Displaying results.
-- Confirming duplicate warnings.
-- Showing validation errors.
-- Navigating menus.
+### Our decision
 
-Domain and application modules are responsible for:
+We used `ProApplication` to coordinate ticket operations.
 
-- Validating operations.
-- Enforcing business rules.
-- Calculating SLA deadlines.
-- Recording successful operations.
-- Coordinating persistence.
+The CLI in `main_pro.py` handles interaction with the user, while the application layer handles the operations behind the menu.
 
-### Entry Points
+### Why we chose this
 
-During development:
+It made it easier to test the application logic separately.
 
-- `main.py` remains the original CampusFlow entry point.
-- `main_pro.py` provides the CampusFlow Pro interface.
+We could test creating, assigning, resolving, reopening, and escalating tickets without always running the interactive CLI.
 
-Before final submission, the documented primary entry point must expose the complete required CampusFlow Pro functionality.
+It also helped us handle invalid input and keyboard interruptions more safely.
 
-### Rationale
+### What I learned
 
-Separating CLI and business logic improves testability and reduces coupling.
+I learned that separating responsibilities makes code easier to understand.
+
+The CLI should mainly deal with what the user sees and enters. It should not be responsible for implementing every ticket rule.
 
 ---
 
-## ADR-009: Maintain One Authoritative Ticket State
+## ADR-009: Maintaining One Consistent Ticket State
 
-### Decision
+### The problem
 
-The original and Pro applications must not independently maintain conflicting copies of the same ticket records.
+Ticket operations often involve more than one change.
 
-CampusFlow Pro will use one canonical version-2 document for active ticket state and audit history.
+For example, resolving a ticket changes its status and should also create an audit event.
 
-The original modules may be reused as business-rule helpers, but the Pro command layer must control how changes are committed.
+If only one of those changes is saved, the ticket history and current state could disagree.
 
-### Rationale
+### Our decision
 
-Multiple independent ticket stores could produce inconsistent statuses, assignments, and history.
+We made the application validate the proposed changes and persist the ticket data and audit events together.
 
-### Consequences
+The updated in-memory state is published only after the save succeeds.
 
-The team must carefully coordinate the integration between existing ticket functions and the Pro persistence layer.
+### Why we chose this
 
----
+This reduces the risk of an operation appearing successful when its required information was not properly saved.
 
-## ADR-010: Establish Clear Engineering Ownership
+### What I learned
 
-### Engineer A — SLA and Data Integrity
+This was one of the areas that helped me understand consistency.
 
-Responsible for:
-
-- UTC clock.
-- SLA policies and deadline calculations.
-- Overdue detection.
-- Escalation and SLA cycles.
-- Version-2 schema validation.
-- Atomic JSON persistence.
-- Ticket ID continuity.
-- SLA and persistence tests.
-
-### Engineer B — Audit, Queues, CLI, and Knowledge Lab
-
-Responsible for:
-
-- Audit-event recording.
-- Ticket history.
-- Duplicate detection.
-- SLA Attention Queue.
-- Enhanced analytics.
-- CLI integration.
-- Engineering Knowledge Lab.
-- Audit, queue, CLI, and quiz tests.
-
-### Shared Responsibilities
-
-- Agree on function contracts.
-- Preserve original business rules.
-- Review pull requests.
-- Resolve integration conflicts.
-- Maintain documentation.
-- Verify end-to-end workflows.
-
-### Rationale
-
-Clear ownership enables parallel development without unnecessary duplication.
+A ticket operation is not complete just because one field has changed. All the changes required by that operation need to agree.
 
 ---
 
-## ADR-011: Use Feature Branches and Peer-Reviewed Pull Requests
+## ADR-010: Sharing Responsibilities Between Two Engineers
 
-### Decision
+### The problem
 
-Development will take place through feature branches.
+We were working on the same project, but we needed to avoid constantly changing each other's files without coordination.
 
-Planned branches:
+### Our decision
 
-| Branch | Owner | Scope |
-|---|---|---|
-| `feat/11-sla-engine` | Engineer A | SLA and escalation |
-| `feat/12-data-integrity` | Engineer A | Version-2 persistence |
-| `feat/13-audit-queues` | Engineer B | Audit, duplicates, queues |
-| `feat/14-cli-knowledge-lab` | Engineer B | CLI and Knowledge Lab |
+We divided the major responsibilities between Engineer A and Engineer B.
 
-Each engineer must contribute at least two pull requests and review the other engineer's work.
+**Engineer A** focused mainly on the SLA engine, escalation behavior, persistence, and data integrity.
 
-Direct feature commits to `main` are prohibited.
+**Engineer B** focused mainly on audit history, duplicate detection, attention queues, reporting, and the CLI and Knowledge Lab work.
 
-### Review Requirements
+Some parts, especially integration and testing, required both engineers to coordinate.
 
-- At least two substantive review observations per PR.
-- Partner approval before merging.
-- Tests must pass before merging.
-- Integration decisions must be documented.
+### Why we chose this
 
----
+It allowed us to work on different features while keeping the responsibilities clear.
 
-## ADR-012: Preserve Regression Coverage and Add Deterministic Tests
+We also needed to agree on shared fields and interfaces, especially where the SLA engine interacted with audit events and persistence.
 
-### Decision
+### What I learned
 
-The existing 106 passing tests form the regression baseline.
+Working with another engineer showed me that communication is part of software development.
 
-CampusFlow Pro must introduce at least 16 meaningful new tests, with at least six authored by each engineer.
-
-### Test Organization
-
-- `tests/` — existing CampusFlow tests.
-- `tests_pro/` — CampusFlow Pro tests.
-
-### Test Principles
-
-- Use fixed UTC clocks.
-- Use temporary files.
-- Test boundary conditions.
-- Test failed operations.
-- Verify no unintended state mutation.
-- Avoid real-time delays and sleeps.
-- Run both test suites before merging.
-
-### Verification Command
-
-```bash
-python3 -m unittest discover -s . -p "test_*.py"
-```
-
-### Rationale
-
-Deterministic tests improve reliability and make regressions easier to identify.
+Even when two pieces of code work separately, they can still have problems when integrated if both developers made different assumptions.
 
 ---
 
-## ADR-013: Keep the Engineering Knowledge Lab Independent
+## ADR-011: Using Git Branches and Pull Requests
 
-### Decision
+### The problem
 
-The Engineering Knowledge Lab will be implemented separately from ticket-management operations.
+We needed a way to work on separate features without constantly changing the stable `main` branch.
 
-It must:
+We also needed to review each other's work before merging.
 
-- Present ten multiple-choice questions.
-- Accept answers A/B/C/D.
-- Re-prompt invalid answers.
-- Collect at least three free-text explanations.
-- Score responses out of ten.
-- Show topics needing revision.
-- Save participant sessions in JSON.
-- Allow mentors to inspect sessions.
-- Never modify ticket state.
+### Our decision
 
-### Rationale
+We used feature branches, commits, and pull requests.
 
-The Knowledge Lab evaluates engineering understanding without affecting helpdesk operations.
+The project history includes PRs for the audit and queue work, data integrity, and the final Pro integration.
 
----
+For example:
 
-## ADR-014: Record and Verify AI-Assisted Engineering Decisions
+- PR #10 — Audit and queue work
+- PR #11 — Data integrity
+- PR #12 — CampusFlow Pro integration
 
-### Decision
+### Why we chose this
 
-Each engineer must document at least three substantive AI-learning cycles.
+Pull requests gave us a way to review changes before adding them to `main`.
 
-Every cycle should include:
+They also helped us track which commits introduced particular features.
 
-1. Engineering problem or uncertainty.
-2. AI suggestion or explanation.
-3. Independent verification.
-4. Test or experimental evidence.
-5. Final engineering decision.
+### What I learned
 
-At least one documented cycle must show an AI suggestion being rejected or modified based on evidence.
+I became more comfortable with Git branches, checking changes, running tests before committing, and merging work through pull requests.
 
-### Rationale
-
-AI assistance must support engineering understanding rather than replace independent verification.
+I also learned that passing tests does not replace code review. Another developer may notice risks that the existing tests do not cover.
 
 ---
 
-## Outstanding Integration Decisions
+## ADR-012: Writing Deterministic Tests and Preserving Regression Coverage
 
-The following must be finalized before dependent implementation begins:
+### The problem
 
-- [ ] Exact shared ticket schema, including escalation marker representation.
-- [ ] Function signatures for SLA and audit integration.
-- [ ] Atomicity strategy for ticket and event updates in memory.
-- [ ] Legacy timestamp compatibility.
-- [ ] Whether legacy JSON migration will be implemented.
-- [ ] Final CampusFlow Pro CLI entry point.
-- [ ] Error and exception contracts between modules.
+We needed to confirm that the new features worked without breaking the original application.
 
-These decisions should be resolved jointly by Engineer A and Engineer B and recorded here before implementation.
+Some features, especially SLA deadlines and escalation, also had edge cases that were difficult to test manually.
+
+### Our decision
+
+We used Python's built-in `unittest` framework.
+
+For time-dependent behavior, we used fixed UTC timestamps.
+
+For persistence tests, we used temporary files so tests would not depend on or modify real application data.
+
+We also kept the original tests running alongside the new tests.
+
+### Why we chose this
+
+Fixed inputs make tests easier to repeat.
+
+Testing boundary conditions helped us catch problems that might not appear during ordinary use.
+
+### Verification
+
+After the integration PR was merged, we ran:
+
+`python3 -m unittest discover -s . -p "test_*.py"`
+
+The result was:
+
+**303 tests passed with no failures or errors.**
+
+We also manually tested the CLI workflows after the merge.
+
+### What I learned
+
+I learned that tests are not only for checking whether a feature works. They also help explain what the expected behavior should be.
 
 ---
 
-## Final Architectural Principle
+## ADR-013: Keeping the Engineer Knowledge Lab Separate
 
-**CampusFlow Pro extends the existing CampusFlow system without duplicating its core business rules.**
+### The problem
 
-The original package remains responsible for established ticket behavior.
+The Engineer Knowledge Lab was introduced to check whether engineers understood important parts of the project.
 
-The new `campusflow_pro/` package introduces advanced functionality through clearly defined interfaces.
+It needed to run without changing actual helpdesk tickets.
 
-Both engineers are responsible for ensuring that the integrated system remains reliable, testable, auditable, and maintainable.
+### Our decision
+
+We implemented the Engineer Knowledge Quiz separately from the ticket-management logic.
+
+The integrated CLI provides a ten-question multiple-choice quiz covering SLA deadlines, ticket transitions, escalation, persistence, code review, and safe AI usage.
+
+The quiz includes scoring and explanations.
+
+### Why we chose this
+
+Learning activities should not accidentally change ticket records or interfere with helpdesk operations.
+
+Keeping the quiz separate also made it easier to test.
+
+### What still needs checking
+
+Issue #8 requires more than multiple-choice questions.
+
+It also requires written explanations, saved participant sessions, and a way for mentors to inspect those sessions.
+
+Although we manually tested the quiz and its existing tests passed, we still need to verify these additional requirements before considering the Knowledge Lab fully complete.
+
+---
+
+## ADR-014: Using AI as a Learning Tool
+
+### The problem
+
+We used AI assistance during development, but the purpose of the project was to improve our own engineering understanding.
+
+Simply copying a suggested solution would not prove that we understood it.
+
+### Our decision
+
+We used AI to discuss problems, understand possible approaches, and identify cases worth testing.
+
+We then used the implementation and tests to check whether those approaches were suitable.
+
+Each engineer is expected to document at least three learning cycles, including a case where AI advice was modified or rejected based on evidence.
+
+### Why we chose this
+
+AI can help explain unfamiliar concepts, but it can also suggest approaches that do not fully match an existing codebase.
+
+The developer still needs to understand the problem and verify the result.
+
+### What I learned
+
+One of my biggest lessons was that I should not accept a solution just because it looks correct.
+
+The SLA attention-queue integration was a useful example. We had to adjust the approach so the new stored deadlines worked correctly without breaking legacy behavior.
+
+---
+
+## Final Integration Decisions
+
+During development, we resolved several decisions that were originally left open.
+
+### Ticket schema
+
+The new schema includes fields such as `due_at`, `escalation_cycle`, and `escalated_cycle`.
+
+These fields allow the SLA system and escalation workflow to share the same ticket information.
+
+### Escalation and audit events
+
+A successful escalation updates the ticket's escalation marker and records an audit event.
+
+Repeated escalation checks during the same cycle do not create duplicate events.
+
+### Persistence and state consistency
+
+The application validates and saves the updated document before publishing the new in-memory state.
+
+Rejected operations should leave ticket data and audit history unchanged.
+
+### Legacy compatibility
+
+For schema-v2 tickets, the attention queue uses the stored `due_at` deadline.
+
+For older tickets without `due_at`, the queue retains legacy calculation behavior.
+
+This was necessary because the existing queue and the new SLA engine originally used different deadline rules.
+
+### CLI integration
+
+The completed Pro CLI is available through `main_pro.py`.
+
+It provides ticket operations, history, SLA attention queue, escalation, reporting, and the Engineer Knowledge Quiz.
+
+### Error handling
+
+Invalid operations are rejected without saving partial changes.
+
+The CLI also handles ordinary input errors and interruptions without unexpectedly crashing.
+
+---
+
+## Remaining Limitations and Improvements
+
+Although the main application has been integrated and tested, there are still some areas that could be improved.
+
+**Concurrent access:** The JSON persistence layer does not currently provide shared locking across multiple processes. This could become a problem if several application instances tried to update the same file.
+
+**Authentication:** The application uses actor names supplied through input. A real helpdesk system would need authentication and role-based permissions.
+
+**Knowledge Lab requirements:** We still need to verify written-answer collection, session persistence, and mentor inspection against the GitHub issue.
+
+**Documentation:** Both engineers need to complete and verify their individual learning evidence and reflections.
+
+These limitations should be documented clearly rather than treated as features that have already been completed.
+
+---
+
+## Conclusion
+
+Working on CampusFlow Pro helped me understand that building an application involves more than writing functions that work individually.
+
+We had to consider how different components share information, how the application behaves when something fails, and how to preserve existing functionality while adding new features.
+
+Some of the most useful lessons came from problems we discovered during integration, especially around SLA deadlines, persistence, and compatibility.
+
+The project also gave me more experience working with another engineer, reviewing code, using Git, and writing tests.
+
+The main application has been merged and passed its automated tests, but we still need to finish the remaining documentation and verify all the requirements in Issue #8 before closing the project.
